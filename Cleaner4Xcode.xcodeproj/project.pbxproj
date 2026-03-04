@@ -7,9 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		B40296B823558580005B74C7 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		B4096D20233887E1006E0959 /* Cleaner for Xcode.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Cleaner for Xcode.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		B4C4F1D1259C1E2400AD81A7 /* screenshot.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = screenshot.png; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -48,8 +46,6 @@
 			isa = PBXGroup;
 			children = (
 				DB71FAD62F58060400F89E13 /* Cleaner4Xcode */,
-				B40296B823558580005B74C7 /* README.md */,
-				B4C4F1D1259C1E2400AD81A7 /* screenshot.png */,
 				B4096D21233887E1006E0959 /* Products */,
 			);
 			sourceTree = "<group>";
