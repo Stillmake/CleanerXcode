@@ -15,6 +15,7 @@ struct Cleaner4XcodeApp: App {
         WindowGroup {
             ContentView()
         }
+        .windowResizability(.contentSize)
         .windowStyle(.hiddenTitleBar)
     }
 }

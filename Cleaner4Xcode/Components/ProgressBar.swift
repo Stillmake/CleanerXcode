@@ -39,7 +39,7 @@ struct ProgressBar: View {
                         startPoint: .init(x: 0, y: 0),
                         endPoint: .init(x: 1, y: 1)
                     )
-                ).animation(.easeInOut)
+                ).animation(.easeInOut, value: progress)
             }
             .frame(width: proxy.size.width, height: self.height)
         }

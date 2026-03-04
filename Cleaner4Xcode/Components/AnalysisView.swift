@@ -29,8 +29,9 @@ struct AnalysisView: View {
 
                     if analysis.progress > 0 && analysis.progress < 1 {
                         ProgressBar(progress: CGFloat(analysis.progress), height: 2)
-                            .frame(width: 80, height: 2, alignment: .leading)
-                            .animation(.easeIn)
+                            .frame(height: 2, alignment: .leading)
+                            .frame(maxWidth: .infinity)
+                            .animation(.easeIn, value: analysis.progress)
                     } else {
                         Text("").frame(height: 2)
                     }
