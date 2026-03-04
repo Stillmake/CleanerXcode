@@ -266,6 +266,74 @@ class AppData: ObservableObject {
         }
     }
 
+    private func archiveDisplayName(path archivePath: String, fallback: String) -> String {
+        assert(archivePath.hasSuffix(".xcarchive"), "archiveDisplayName expects an .xcarchive path")
+
+        let trimmedFallback = fallback.trimmingCharacters(in: .whitespacesAndNewlines)
+        assert(!trimmedFallback.isEmpty, "archiveDisplayName fallback should not be empty")
+        let safeFallback = trimmedFallback.isEmpty ? "Unknown Archive" : trimmedFallback
+
+        func nonEmptyString(_ raw: Any?) -> String? {
+            guard let value = raw as? String else {
+                return nil
+            }
+
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
+        }
+
+        func displayNameFallback(_ raw: String) -> String {
+            return URL(fileURLWithPath: raw).deletingPathExtension().lastPathComponent
+        }
+
+        let infoPath = archivePath.joinPath("Info.plist")
+
+        guard let archiveInfo = NSDictionary(contentsOf: URL(fileURLWithPath: infoPath)) as? [String: Any] else {
+            return displayNameFallback(safeFallback)
+        }
+
+        let appProperties = archiveInfo["ApplicationProperties"] as? [String: Any]
+
+        let applicationPath = nonEmptyString(appProperties?["ApplicationPath"])?.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        let appInfoPath = applicationPath.map {
+            archivePath.joinPath("Products").joinPath($0).joinPath("Info.plist")
+        }
+        let appInfo = appInfoPath.flatMap {
+            NSDictionary(contentsOf: URL(fileURLWithPath: $0)) as? [String: Any]
+        }
+
+        let rootName = nonEmptyString(archiveInfo["Name"])
+        let appPathName = applicationPath.map {
+            URL(fileURLWithPath: $0).deletingPathExtension().lastPathComponent
+        }
+        let appDisplayName = nonEmptyString(appInfo?["CFBundleDisplayName"])
+        let appBundleName = nonEmptyString(appInfo?["CFBundleName"])
+
+        let appName = [rootName, appDisplayName, appBundleName, appPathName]
+            .compactMap { $0 }
+            .first { !$0.isEmpty }
+
+        let version = nonEmptyString(appProperties?["CFBundleShortVersionString"])
+            ?? nonEmptyString(appInfo?["CFBundleShortVersionString"])
+        let build = nonEmptyString(appProperties?["CFBundleVersion"])
+            ?? nonEmptyString(appInfo?["CFBundleVersion"])
+        let finalName = appName ?? displayNameFallback(safeFallback)
+
+        if let version, let build {
+            return "\(finalName) \(version) (\(build))"
+        }
+
+        if let version {
+            return "\(finalName) \(version)"
+        }
+
+        if let build {
+            return "\(finalName) (\(build))"
+        }
+
+        return finalName
+    }
+
     func analyzeGroup(analysis: Analysis, developerPath path: String, depth: Int = 0) throws {
         let fm = FileHelper.standard
         var subDirectories = [String]()
@@ -277,10 +345,14 @@ class AppData: ObservableObject {
                 (try? fm.listDirectory(parentPath, onlyDirectory: true)) ?? []
             }
 
-            //} else if analysis.group == .archives {
-            //  subDirectories = subDirectories.flatMap { parentPath in
-            //    (try? fm.listDirectory(parentPath, onlyDirectory: true)) ?? []
-            //  }
+        } else if analysis.group == .archives {
+            // Xcode archives usually live in date folders under Archives/
+            // and each real item is a .xcarchive bundle.
+            let nestedArchives = subDirectories.flatMap { parentPath in
+                (try? fm.listDirectory(parentPath, onlyDirectory: true)) ?? []
+            }
+            let directArchives = subDirectories.filter { $0.hasSuffix(".xcarchive") }
+            subDirectories = Array(Set(directArchives + nestedArchives)).filter { $0.hasSuffix(".xcarchive") }
 
         } else if analysis.group == .deviceSupport {
             subDirectories = [
@@ -321,6 +393,8 @@ class AppData: ObservableObject {
                         version = version.replacingOccurrences(of: "OS-", with: "OS ").replacingOccurrences(of: "-", with: ".")
                         display = "\(name) (\(version))"
                     }
+                } else if analysis.group == .archives {
+                    display = self.archiveDisplayName(path: subDirectory, fallback: display)
                 }
 
                 DispatchQueue.main.async {
@@ -337,13 +411,6 @@ class AppData: ObservableObject {
 
                     case .coreSimulatorCaches:
                         groupLabel = parentDirName
-
-                    //case .archives:
-                    //  if let plist = NSDictionary(contentsOf: URL(fileURLWithPath: subDirectory.joinPath("Info.plist"))){
-                    //    let name: String = plist["Name"] as! String
-                    //    groupLabel = name
-                    //    display = plist["ArchiveVersion"] as? String ?? "unknown"
-                    //  }
 
                     default:
                         groupLabel = nil
