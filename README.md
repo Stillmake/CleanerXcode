@@ -2,6 +2,8 @@
 
 This is the new `SwiftUI` version of my original `react-native-macos` powered [XcodeCleaner](https://github.com/waylybaye/XcodeCleaner)
 
+> **Note:** This repository is a fork of the original project (which is also open source). It keeps the same spirit, with small optimizations and a provided DMG package for convenience.
+
 ----
 
 ![screenshot](./screenshot.png)
