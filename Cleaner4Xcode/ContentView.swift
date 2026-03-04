@@ -7,36 +7,65 @@
 //
 
 import SwiftUI
+import AppKit
 
 struct ContentView: View {
     @ObservedObject var data = AppData()
+
+    private func command(for group: AnalysisGroup) -> String? {
+        switch group {
+        case .simulators:
+            return "xcrun simctl delete unavailable"
+        case .previews:
+            return "xcrun simctl --set previews delete unavailable"
+        default:
+            return nil
+        }
+    }
+
+    private func copyCommandToPasteboard(_ command: String) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(command, forType: .string)
+    }
+
     var dataView: some View {
         VStack(alignment: .leading, spacing: 0) {
+            let selectedGroup = data.selectedGroup!
+            let summaryKey = selectedGroup.group.describe().summary
+            let command = command(for: selectedGroup.group)
             HStack(alignment: .top) {
                 Text(
-                    LocalizedStringKey(
-                        data.selectedGroup!.group.describe().summary)
+                    LocalizedStringKey(summaryKey)
                 )
                 .font(.footnote)
                 .foregroundColor(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .multilineTextAlignment(.leading)
 
-                Spacer()
+                if let command {
+                    Button("Copy Command") {
+                        copyCommandToPasteboard(command)
+                    }
+                    .font(.caption)
+                    .buttonStyle(.borderedProminent)
+                    .tint(.pink.opacity(0.5))
+                }
             }
-            .padding(.horizontal)
-            .padding(.bottom)
+            .padding(.horizontal, 12)
+            .padding(.bottom, 12)
 
             Divider()
 
-            ResultsTableView(analysis: data.selectedGroup!)
+            ResultsTableView(analysis: selectedGroup)
                 .background(Color(NSColor.underPageBackgroundColor))
         }
         .frame(minWidth: 500, minHeight: 500)
     }
 
-    var body: some View {
-        let groups = data.groups.map { $0.0 }
-        let selectedColor = Color.pink.opacity(0.2)
+    let selectedColor = Color.pink.opacity(0.2)
 
+    var body: some View {
         NavigationSplitView {
             ScrollView {
                 VStack(spacing: 4) {
@@ -56,7 +85,7 @@ struct ContentView: View {
                     }
                     .buttonStyle(.noAnimation)
 
-                    ForEach(groups, id: \.group) { group in
+                    ForEach(data.groups.map { $0.0 }, id: \.group) { group in
                         Button {
                             if self.data.selectedGroup !== group {
                                 self.data.selectedGroup = group
